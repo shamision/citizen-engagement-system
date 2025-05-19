@@ -1,2 +1,1 @@
-# Procfile
-web: gunicorn citizen_engagement.wsgi --log-file -
+web: gunicorn citizen_engagement.wsgi:application --preload
