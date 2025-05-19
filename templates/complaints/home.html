@@ -3,110 +3,109 @@
 {% block title %}Citizen Engagement System - Submit or Track Complaints{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-6">
-        <div class="card shadow-sm mb-4">
-            <div class="card-header bg-primary text-white">
-                <h3 class="mb-0">Submit a Complaint</h3>
-            </div>
-            <div class="card-body">
-                <form id="complaint-form" method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <input type="hidden" name="submit_complaint" value="1">
-                    
-                    <div class="mb-3">
-                        <label for="id_category" class="form-label">Category*</label>
-                        <select name="category" id="id_category" class="form-select" required>
-                            <option value="">Select a category</option>
-                            {% for category in categories %}
-                                <option value="{{ category.id }}">{{ category.name }}</option>
-                            {% endfor %}
-                        </select>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-sm border-0 rounded-lg mb-5">
+                <div class="card-header bg-white border-0 p-4">
+                    <ul class="nav nav-pills nav-fill" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="submit-tab" data-bs-toggle="tab" data-bs-target="#submit-pane" type="button" role="tab">Submit Complaint</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="track-tab" data-bs-toggle="tab" data-bs-target="#track-pane" type="button" role="tab">Track Complaint</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body p-4">
+                    <div class="tab-content" id="myTabContent">
+                        <div class="tab-pane fade show active" id="submit-pane" role="tabpanel">
+                            <form id="complaint-form" method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input type="hidden" name="submit_complaint" value="1">
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_name" class="form-label">Full Name</label>
+                                        <input type="text" name="name" id="id_name" class="form-control" placeholder="Enter your full name" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_email" class="form-label">Email Address</label>
+                                        <input type="email" name="email" id="id_email" class="form-control" placeholder="email@example.com" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_phone" class="form-label">Phone Number</label>
+                                        <input type="text" name="phone" id="id_phone" class="form-control" placeholder="Enter your phone number">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="id_category" class="form-label">Category</label>
+                                        <select name="category" id="id_category" class="form-select" required>
+                                            <option value="">Select a category</option>
+                                            {% for category in categories %}
+                                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="id_location" class="form-label">Location</label>
+                                    <input type="text" name="location" id="id_location" class="form-control" placeholder="Enter the location" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="id_subject" class="form-label">Subject</label>
+                                    <input type="text" name="subject" id="id_subject" class="form-control" placeholder="Enter your subject" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="id_description" class="form-label">Description</label>
+                                    <textarea name="description" id="id_description" class="form-control" rows="4" placeholder="Type your message" required></textarea>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label for="id_attachment" class="form-label">Upload File (Optional)</label>
+                                    <div class="upload-area border rounded p-3">
+                                        <div class="text-center">
+                                            <p class="mb-2">Drop files here</p>
+                                            <p>or</p>
+                                            <input type="file" id="id_attachment" name="attachment" class="d-none">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('id_attachment').click()">Browse</button>
+                                        </div>
+                                    </div>
+                                    <div id="file-name" class="mt-2"></div>
+                                </div>
+                                
+                                <div class="text-center">
+                                    <button type="submit" class="btn btn-primary px-5 py-2">Submit</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="tab-pane fade" id="track-pane" role="tabpanel">
+                            <form action="{% url 'track_complaint' %}" method="post">
+                                {% csrf_token %}
+                                <div class="mb-4">
+                                    <p class="text-center text-muted mb-4">Enter your complaint tracking ID to check its status.</p>
+                                    <label for="id_tracking_id" class="form-label">Tracking ID</label>
+                                    <input type="text" name="tracking_id" id="id_tracking_id" class="form-control" placeholder="Enter your tracking ID" required>
+                                </div>
+                                
+                                <div class="text-center">
+                                    <button type="submit" class="btn btn-primary px-5 py-2">Track Complaint</button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_name" class="form-label">Your Name*</label>
-                        <input type="text" name="name" id="id_name" class="form-control" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_email" class="form-label">Email Address*</label>
-                        <input type="email" name="email" id="id_email" class="form-control" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_phone" class="form-label">Phone Number</label>
-                        <input type="text" name="phone" id="id_phone" class="form-control">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_subject" class="form-label">Subject*</label>
-                        <input type="text" name="subject" id="id_subject" class="form-control" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_description" class="form-label">Description*</label>
-                        <textarea name="description" id="id_description" class="form-control" rows="4" required></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_location" class="form-label">Location*</label>
-                        <input type="text" name="location" id="id_location" class="form-control" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_attachment" class="form-label">Attachment (Optional)</label>
-                        <input type="file" name="attachment" id="id_attachment" class="form-control">
-                    </div>
-                    
-                    <div class="text-end">
-                        <button type="submit" class="btn btn-primary">Submit Complaint</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-header bg-success text-white">
-                <h3 class="mb-0">Track Your Complaint</h3>
-            </div>
-            <div class="card-body">
-                <p class="mb-4">Enter your complaint tracking ID to check its status.</p>
-                
-                <form action="{% url 'track_complaint' %}" method="post">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="id_tracking_id" class="form-label">Tracking ID*</label>
-                        <input type="text" name="tracking_id" id="id_tracking_id" class="form-control" required>
-                    </div>
-                    
-                    <div class="text-end">
-                        <button type="submit" class="btn btn-success">Track Complaint</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        
-        <div class="card shadow-sm mt-4">
-            <div class="card-header bg-info text-white">
-                <h3 class="mb-0">About the System</h3>
-            </div>
-            <div class="card-body">
-                <p>The Citizen Engagement System allows you to:</p>
-                <ul>
-                    <li>Submit complaints about public services</li>
-                    <li>Track the status of your complaint</li>
-                    <li>Receive responses from government agencies</li>
-                </ul>
-                <p>Your feedback helps improve public services for everyone!</p>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Tracking ID Modal -->
 <div class="modal fade" id="trackingIdModal" tabindex="-1" aria-labelledby="trackingIdModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -132,7 +131,6 @@
 {% block extra_js %}
 <script>
     $(document).ready(function() {
-        // Handle complaint form submission
         $('#complaint-form').submit(function(e) {
             e.preventDefault();
             
@@ -146,15 +144,13 @@
                 contentType: false,
                 success: function(response) {
                     if (response.success) {
-                        // Display tracking ID in modal
                         $('#tracking-id-display').text(response.tracking_id);
                         var trackingModal = new bootstrap.Modal(document.getElementById('trackingIdModal'));
                         trackingModal.show();
                         
-                        // Reset the form
                         $('#complaint-form')[0].reset();
+                        $('#file-name').empty();
                     } else {
-                        // Display form errors
                         Object.keys(response.errors).forEach(function(key) {
                             var errorMsg = response.errors[key][0];
                             var inputField = $('#id_' + key);
@@ -173,11 +169,24 @@
             });
         });
         
-        // Clear validation errors on input
         $('.form-control, .form-select').on('input change', function() {
             $(this).removeClass('is-invalid');
             $(this).next('.invalid-feedback').remove();
         });
+        
+        $('#id_attachment').change(function() {
+            var fileName = $(this).val().split('\\').pop();
+            if (fileName) {
+                $('#file-name').html('<div class="alert alert-info py-1">' + fileName + ' <button type="button" class="btn-close float-end" onclick="removeFile()"></button></div>');
+            } else {
+                $('#file-name').empty();
+            }
+        });
     });
+    
+    function removeFile() {
+        $('#id_attachment').val('');
+        $('#file-name').empty();
+    }
 </script>
 {% endblock %}

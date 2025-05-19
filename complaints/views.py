@@ -3,6 +3,10 @@ from django.contrib import messages
 from django.http import JsonResponse
 from .models import Complaint, Category, Response
 from .forms import ComplaintForm, TrackingForm, ResponseForm
+from django.utils import timezone
+from .models import Complaint, Category, Response, Agency
+from django.db.models import Count, Avg, F, ExpressionWrapper, DurationField, Q
+from django.db.models.fields import DurationField
 
 def home(request):
     
@@ -53,8 +57,8 @@ def track_complaint(request):
                 return redirect('home')
     return redirect('home')
 
-# Admin views for government officials
 def admin_dashboard(request):
+    """Dashboard for government officials"""
     complaints = Complaint.objects.all().order_by('-created_at')
     
     # Filter by status if provided
@@ -67,10 +71,23 @@ def admin_dashboard(request):
     if category_id:
         complaints = complaints.filter(category_id=category_id)
     
+    # Get statistics for dashboard
+    total_complaints = Complaint.objects.count()
+    open_complaints = Complaint.objects.exclude(status__in=['resolved', 'closed']).count()
+    resolved_complaints = Complaint.objects.filter(status__in=['resolved', 'closed']).count()
+    
+    # Count unique categories instead of agencies if Agency model isn't available
+    agency_count = Category.objects.values('agency').distinct().count()
+    
     context = {
         'complaints': complaints,
+        'total_complaints': total_complaints,
+        'open_complaints': open_complaints,
+        'resolved_complaints': resolved_complaints,
+        'agency_count': agency_count,
         'status_choices': Complaint.STATUS_CHOICES,
         'categories': Category.objects.all(),
+        'current_date': timezone.now(),
     }
     return render(request, 'complaints/admin/dashboard.html', context)
 
@@ -110,54 +127,81 @@ def complaint_detail(request, tracking_id):
 # complaints/views.py (add a new function)
 
 def dashboard_analytics(request):
-    """Simple analytics dashboard for admins"""
+    """Analytics dashboard for admins"""
     # Get complaint statistics
     total_complaints = Complaint.objects.count()
     open_complaints = Complaint.objects.exclude(status__in=['resolved', 'closed']).count()
     resolved_complaints = Complaint.objects.filter(status__in=['resolved', 'closed']).count()
     
+    # Calculate resolution rate
+    resolution_rate = 0
+    if total_complaints > 0:
+        resolution_rate = round((resolved_complaints / total_complaints) * 100)
+    
+    # Calculate average resolution time (in days) without ExpressionWrapper
+    avg_resolution_time = 0
+    resolved_complaints_qs = Complaint.objects.filter(status__in=['resolved', 'closed'])
+    
+    if resolved_complaints_qs.exists():
+        total_days = 0
+        count = 0
+        
+        for complaint in resolved_complaints_qs:
+            if complaint.updated_at and complaint.created_at:
+                days = (complaint.updated_at - complaint.created_at).days
+                total_days += days
+                count += 1
+        
+        if count > 0:
+            avg_resolution_time = round(total_days / count)
+    
+    # Dummy satisfaction rate (in a real app, this would come from user feedback)
+    satisfaction_rate = 85
+    
     # Get category distribution
-    category_stats = []
-    categories = Category.objects.all()
-    for category in categories:
-        category_count = Complaint.objects.filter(category=category).count()
-        if category_count > 0:
-            category_stats.append({
-                'name': category.name,
-                'count': category_count,
-                'percentage': (category_count / total_complaints) * 100 if total_complaints > 0 else 0
-            })
+    category_stats = Category.objects.annotate(count=Count('complaints')).order_by('-count')
     
     # Get status distribution
     status_stats = []
-    status_choices = dict(Complaint.STATUS_CHOICES)
-    for status_value, status_display in status_choices.items():
-        status_count = Complaint.objects.filter(status=status_value).count()
-        if status_count > 0:
-            status_stats.append({
-                'name': status_display,
-                'count': status_count,
-                'percentage': (status_count / total_complaints) * 100 if total_complaints > 0 else 0
-            })
+    for status_code, status_name in Complaint.STATUS_CHOICES:
+        count = Complaint.objects.filter(status=status_code).count()
+        status_stats.append({
+            'status': status_code,
+            'name': status_name,
+            'count': count
+        })
     
-    # Calculate response time metrics (in days)
-    import datetime
-    response_times = []
-    resolved_complaints_objects = Complaint.objects.filter(status__in=['resolved', 'closed'])
-    for complaint in resolved_complaints_objects:
-        created_date = complaint.created_at.date()
-        updated_date = complaint.updated_at.date()
-        days_to_resolve = (updated_date - created_date).days
-        response_times.append(days_to_resolve)
+    # Get monthly complaints data (for the current year)
+    current_year = timezone.now().year
+    monthly_complaints = []
+    monthly_resolved = []
     
-    avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+    for month in range(1, 13):
+        month_count = Complaint.objects.filter(
+            created_at__year=current_year,
+            created_at__month=month
+        ).count()
+        
+        resolved_count = Complaint.objects.filter(
+            created_at__year=current_year,
+            created_at__month=month,
+            status__in=['resolved', 'closed']
+        ).count()
+        
+        monthly_complaints.append(month_count)
+        monthly_resolved.append(resolved_count)
     
     context = {
         'total_complaints': total_complaints,
         'open_complaints': open_complaints,
         'resolved_complaints': resolved_complaints,
+        'resolution_rate': resolution_rate,
+        'avg_resolution_time': avg_resolution_time,
+        'satisfaction_rate': satisfaction_rate,
         'category_stats': category_stats,
         'status_stats': status_stats,
-        'avg_response_time': avg_response_time,
+        'monthly_complaints': monthly_complaints,
+        'monthly_resolved': monthly_resolved,
+        'current_date': timezone.now(),
     }
     return render(request, 'complaints/admin/analytics.html', context)
