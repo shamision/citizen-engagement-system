@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Tracking Complaint: {{ complaint.tracking_id }}{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-primary text-white">
+        <h3 class="mb-0">Complaint Details: {{ complaint.tracking_id }}</h3>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5>Complaint Information</h5>
+                <table class="table table-bordered">
+                    <tr>
+                        <th style="width: 30%">Tracking ID</th>
+                        <td>{{ complaint.tracking_id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Status</th>
+                        <td>
+                            <span class="badge rounded-pill 
+                            {% if complaint.status == 'submitted' %}bg-info
+                            {% elif complaint.status == 'under_review' %}bg-secondary
+                            {% elif complaint.status == 'in_progress' %}bg-primary
+                            {% elif complaint.status == 'resolved' %}bg-success
+                            {% elif complaint.status == 'closed' %}bg-dark
+                            {% endif %}">
+                                {{ complaint.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Submitted On</th>
+                        <td>{{ complaint.created_at|date:"F d, Y - h:i A" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Last Updated</th>
+                        <td>{{ complaint.updated_at|date:"F d, Y - h:i A" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Category</th>
+                        <td>{{ complaint.category.name }}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h5>Contact Information</h5>
+                <table class="table table-bordered">
+                    <tr>
+                        <th style="width: 30%">Name</th>
+                        <td>{{ complaint.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td>{{ complaint.email }}</td>
+                    </tr>
+                    {% if complaint.phone %}
+                    <tr>
+                        <th>Phone</th>
+                        <td>{{ complaint.phone }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <th>Location</th>
+                        <td>{{ complaint.location }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <h5>Complaint Details</h5>
+        <table class="table table-bordered mb-4">
+            <tr>
+                <th style="width: 20%">Subject</th>
+                <td>{{ complaint.subject }}</td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>{{ complaint.description }}</td>
+            </tr>
+            {% if complaint.attachment %}
+            <tr>
+                <th>Attachment</th>
+                <td><a href="{{ complaint.attachment.url }}" target="_blank" class="btn btn-sm btn-outline-primary">View Attachment</a></td>
+            </tr>
+            {% endif %}
+        </table>
+        
+        <h5>Responses</h5>
+        {% if responses %}
+            {% for response in responses %}
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <strong>{{ response.responder_name }}</strong>, {{ response.responder_title }} - 
+                    <small class="text-muted">{{ response.created_at|date:"F d, Y - h:i A" }}</small>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ response.content }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                No responses yet. The relevant department will review your complaint shortly.
+            </div>
+        {% endif %}
+        
+        <div class="mt-4">
+            <a href="{% url 'home' %}" class="btn btn-secondary">Back to Home</a>
+            <a href="javascript:window.print();" class="btn btn-outline-primary ms-2">Print Details</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

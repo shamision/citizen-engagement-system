@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Complaint Details: {{ complaint.tracking_id }}{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">Complaint Details: {{ complaint.tracking_id }}</h3>
+        <div>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-light btn-sm">
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h5>Complaint Information</h5>
+                <table class="table table-bordered">
+                    <tr>
+                        <th style="width: 20%">Tracking ID</th>
+                        <td>{{ complaint.tracking_id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Status</th>
+                        <td>
+                            <form method="post" class="d-flex align-items-center">
+                                {% csrf_token %}
+                                <input type="hidden" name="update_status" value="1">
+                                <select name="status" class="form-select form-select-sm me-2" style="max-width: 200px;">
+                                    {% for status_value, status_display in status_choices %}
+                                    <option value="{{ status_value }}" {% if complaint.status == status_value %}selected{% endif %}>
+                                        {{ status_display }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn btn-primary btn-sm">Update Status</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Submitted On</th>
+                        <td>{{ complaint.created_at|date:"F d, Y - h:i A" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Last Updated</th>
+                        <td>{{ complaint.updated_at|date:"F d, Y - h:i A" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Category</th>
+                        <td>{{ complaint.category.name }} ({{ complaint.category.agency.name }})</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-4">
+                <h5>Contact Information</h5>
+                <table class="table table-bordered">
+                    <tr>
+                        <th>Name</th>
+                        <td>{{ complaint.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email</th>
+                        <td>{{ complaint.email }}</td>
+                    </tr>
+                    {% if complaint.phone %}
+                    <tr>
+                        <th>Phone</th>
+                        <td>{{ complaint.phone }}</td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <th>Location</th>
+                        <td>{{ complaint.location }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <h5>Complaint Details</h5>
+        <table class="table table-bordered mb-4">
+            <tr>
+                <th style="width: 20%">Subject</th>
+                <td>{{ complaint.subject }}</td>
+            </tr>
+            <tr>
+                <th>Description</th>
+                <td>{{ complaint.description }}</td>
+            </tr>
+            {% if complaint.attachment %}
+            <tr>
+                <th>Attachment</th>
+                <td><a href="{{ complaint.attachment.url }}" target="_blank" class="btn btn-sm btn-outline-primary">View Attachment</a></td>
+            </tr>
+            {% endif %}
+        </table>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Add Response</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="submit_response" value="1">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="id_responder_name" class="form-label">Your Name*</label>
+                            <input type="text" name="responder_name" id="id_responder_name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="id_responder_title" class="form-label">Your Title/Position*</label>
+                            <input type="text" name="responder_title" id="id_responder_title" class="form-control" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_content" class="form-label">Response Content*</label>
+                        <textarea name="content" id="id_content" class="form-control" rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">Submit Response</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <h5>Previous Responses</h5>
+        {% if responses %}
+            {% for response in responses %}
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <strong>{{ response.responder_name }}</strong>, {{ response.responder_title }} - 
+                    <small class="text-muted">{{ response.created_at|date:"F d, Y - h:i A" }}</small>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ response.content }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                No responses have been submitted yet.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

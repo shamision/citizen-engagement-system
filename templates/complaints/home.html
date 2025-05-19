@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}Citizen Engagement System - Submit or Track Complaints{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Submit a Complaint</h3>
+            </div>
+            <div class="card-body">
+                <form id="complaint-form" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="submit_complaint" value="1">
+                    
+                    <div class="mb-3">
+                        <label for="id_category" class="form-label">Category*</label>
+                        <select name="category" id="id_category" class="form-select" required>
+                            <option value="">Select a category</option>
+                            {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_name" class="form-label">Your Name*</label>
+                        <input type="text" name="name" id="id_name" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">Email Address*</label>
+                        <input type="email" name="email" id="id_email" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_phone" class="form-label">Phone Number</label>
+                        <input type="text" name="phone" id="id_phone" class="form-control">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_subject" class="form-label">Subject*</label>
+                        <input type="text" name="subject" id="id_subject" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_description" class="form-label">Description*</label>
+                        <textarea name="description" id="id_description" class="form-control" rows="4" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_location" class="form-label">Location*</label>
+                        <input type="text" name="location" id="id_location" class="form-control" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="id_attachment" class="form-label">Attachment (Optional)</label>
+                        <input type="file" name="attachment" id="id_attachment" class="form-control">
+                    </div>
+                    
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">Submit Complaint</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0">Track Your Complaint</h3>
+            </div>
+            <div class="card-body">
+                <p class="mb-4">Enter your complaint tracking ID to check its status.</p>
+                
+                <form action="{% url 'track_complaint' %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_tracking_id" class="form-label">Tracking ID*</label>
+                        <input type="text" name="tracking_id" id="id_tracking_id" class="form-control" required>
+                    </div>
+                    
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-success">Track Complaint</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-info text-white">
+                <h3 class="mb-0">About the System</h3>
+            </div>
+            <div class="card-body">
+                <p>The Citizen Engagement System allows you to:</p>
+                <ul>
+                    <li>Submit complaints about public services</li>
+                    <li>Track the status of your complaint</li>
+                    <li>Receive responses from government agencies</li>
+                </ul>
+                <p>Your feedback helps improve public services for everyone!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tracking ID Modal -->
+<div class="modal fade" id="trackingIdModal" tabindex="-1" aria-labelledby="trackingIdModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="trackingIdModalLabel">Complaint Submitted Successfully</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Your complaint has been submitted successfully. Please save your tracking ID:</p>
+                <div class="alert alert-info text-center">
+                    <h2 id="tracking-id-display"></h2>
+                </div>
+                <p class="text-danger fw-bold">Important: Please write down or save this tracking ID. You will need it to check the status of your complaint.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Handle complaint form submission
+        $('#complaint-form').submit(function(e) {
+            e.preventDefault();
+            
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: '{% url "home" %}',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        // Display tracking ID in modal
+                        $('#tracking-id-display').text(response.tracking_id);
+                        var trackingModal = new bootstrap.Modal(document.getElementById('trackingIdModal'));
+                        trackingModal.show();
+                        
+                        // Reset the form
+                        $('#complaint-form')[0].reset();
+                    } else {
+                        // Display form errors
+                        Object.keys(response.errors).forEach(function(key) {
+                            var errorMsg = response.errors[key][0];
+                            var inputField = $('#id_' + key);
+                            inputField.addClass('is-invalid');
+                            if (inputField.next('.invalid-feedback').length === 0) {
+                                inputField.after('<div class="invalid-feedback">' + errorMsg + '</div>');
+                            } else {
+                                inputField.next('.invalid-feedback').text(errorMsg);
+                            }
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('An error occurred while submitting your complaint. Please try again later.');
+                }
+            });
+        });
+        
+        // Clear validation errors on input
+        $('.form-control, .form-select').on('input change', function() {
+            $(this).removeClass('is-invalid');
+            $(this).next('.invalid-feedback').remove();
+        });
+    });
+</script>
+{% endblock %}

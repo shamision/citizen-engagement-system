@@ -1,0 +1,26 @@
+# render.yaml
+services:
+  - type: web
+    name: citizen-engagement
+    env: python
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn citizen_engagement.wsgi:application
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: citizen-engagement-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: 3.9.7
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com,localhost,127.0.0.1"
+
+databases:
+  - name: citizen-engagement-db
+    databaseName: citizen_engagement
+    user: citizen_engagement_user
+    plan: free
