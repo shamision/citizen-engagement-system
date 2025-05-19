@@ -12,20 +12,14 @@ echo "Running migrations"
 python manage.py migrate
 
 echo "Creating superuser if it doesn't exist"
-python - << EOF
-import django
-import os
-django.setup()
-from django.contrib.auth import get_user_model
-User = get_user_model()
+python manage.py shell -c "
+from django.contrib.auth import get_user_model;
+User = get_user_model();
 if not User.objects.filter(username='admin').exists():
-    User.objects.create_superuser('admin', 'admin@example.com', 'adminpass123')
-    print('Superuser created')
+    User.objects.create_superuser('admin', 'admin@example.com', 'adminpass123');
+    print('Superuser created');
 else:
-    print('Superuser already exists')
-EOF
-
-echo "Loading sample data"
-python manage.py load_sample_data || echo "Sample data command failed, but continuing"
+    print('Superuser already exists');
+"
 
 echo "Build completed successfully"
