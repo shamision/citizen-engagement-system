@@ -22,4 +22,7 @@ else:
     print('Superuser already exists');
 "
 
+echo "Loading sample data"
+python manage.py load_sample_data || echo "Sample data command failed, but continuing"
+
 echo "Build completed successfully"
